@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game SOS by Yusuf</title>
+    <style>
+        body {
+            font-family: 'Arial Rounded MT Bold', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #ffeb3b 0%, #4caf50 50%, #f44336 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #333;
+        }
+        
+        h1 {
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            margin-bottom: 10px;
+        }
+        
+        .game-container {
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            width: fit-content;
+            margin-bottom: 20px;
+        }
+        
+        .players {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+        
+        .player {
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 10px 20px;
+            border-radius: 10px;
+            width: 45%;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .player.active {
+            background-color: #ffeb3b;
+            font-weight: bold;
+            transform: scale(1.05);
+            transition: all 0.3s ease;
+        }
+        
+        .player input {
+            border: none;
+            background: transparent;
+            font-size: 16px;
+            text-align: center;
+            width: 80%;
+            border-bottom: 2px solid #ddd;
+            margin-top: 5px;
+        }
+        
+        .player input:focus {
+            outline: none;
+            border-bottom-color: #4caf50;
+        }
+        
+        .score {
+            font-size: 24px;
+            font-weight: bold;
+            color: #f44336;
+            margin-top: 5px;
+        }
+        
+        .board {
+            display: grid;
+            grid-template-columns: repeat(20, 30px);
+            grid-template-rows: repeat(20, 30px);
+            gap: 2px;
+            margin: 20px auto;
+        }
+        
+        .cell {
+            width: 30px;
+            height: 30px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-radius: 3px;
+        }
+        
+        .cell:hover {
+            background-color: #f5f5f5;
+            transform: scale(1.1);
+        }
+        
+        .cell.S {
+            color: #2196F3;
+        }
+        
+        .cell.O {
+            color: #FF5722;
+        }
+        
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #4caf50;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        button:hover {
+            background-color: #3d8b40;
+            transform: translateY(-2px);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .footer {
+            margin-top: 20px;
+            font-family: 'Brush Script MT', cursive;
+            font-size: 24px;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <h1>Game SOS</h1>
+    
+    <div class="game-container">
+        <div class="players">
+            <div class="player active" id="player1">
+                <div>Player 1</div>
+                <input type="text" value="Yusuf" id="player1Name">
+                <div class="score">Score: <span id="player1Score">0</span></div>
+            </div>
+            <div class="player" id="player2">
+                <div>Player 2</div>
+                <input type="text" value="Yunda" id="player2Name">
+                <div class="score">Score: <span id="player2Score">0</span></div>
+            </div>
+        </div>
+        
+        <div class="board" id="board"></div>
+        
+        <div class="controls">
+            <button id="newGameBtn">New Game</button>
+            <button id="changeNamesBtn">Change Names</button>
+        </div>
+    </div>
+    
+    <div class="footer">Made by Yusuf</div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const board = document.getElementById('board');
+            const player1 = document.getElementById('player1');
+            const player2 = document.getElementById('player2');
+            const player1NameInput = document.getElementById('player1Name');
+            const player2NameInput = document.getElementById('player2Name');
+            const player1Score = document.getElementById('player1Score');
+            const player2Score = document.getElementById('player2Score');
+            const newGameBtn = document.getElementById('newGameBtn');
+            const changeNamesBtn = document.getElementById('changeNamesBtn');
+            
+            const SIZE = 20;
+            let currentPlayer = 1;
+            let gameBoard = Array(SIZE).fill().map(() => Array(SIZE).fill(''));
+            let scores = [0, 0];
+            let gameActive = true;
+            
+            // Initialize the board
+            function initializeBoard() {
+                board.innerHTML = '';
+                gameBoard = Array(SIZE).fill().map(() => Array(SIZE).fill(''));
+                
+                for (let row = 0; row < SIZE; row++) {
+                    for (let col = 0; col < SIZE; col++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'cell';
+                        cell.dataset.row = row;
+                        cell.dataset.col = col;
+                        cell.addEventListener('click', () => handleCellClick(row, col));
+                        board.appendChild(cell);
+                    }
+                }
+            }
+            
+            // Handle cell click
+            function handleCellClick(row, col) {
+                if (!gameActive || gameBoard[row][col] !== '') return;
+                
+                const selection = prompt(`Player ${currentPlayer}, enter S or O:`);
+                if (selection === null) return;
+                
+                const upperSelection = selection.toUpperCase();
+                if (upperSelection !== 'S' && upperSelection !== 'O') {
+                    alert('Please enter only S or O!');
+                    return;
+                }
+                
+                gameBoard[row][col] = upperSelection;
+                updateBoard();
+                
+                const points = checkForSOS(row, col);
+                if (points > 0) {
+                    scores[currentPlayer - 1] += points;
+                    updateScores();
+                } else {
+                    switchPlayer();
+                }
+            }
+            
+            // Check for SOS patterns
+            function checkForSOS(row, col) {
+                const directions = [
+                    [-1, -1], [-1, 0], [-1, 1],  // top-left, top, top-right
+                    [0, -1],           [0, 1],   // left, right
+                    [1, -1],  [1, 0], [1, 1]     // bottom-left, bottom, bottom-right
+                ];
+                
+                let totalPoints = 0;
+                const currentLetter = gameBoard[row][col];
+                
+                directions.forEach(([dr, dc]) => {
+                    // Check if the adjacent cells form an SOS pattern
+                    const r1 = row + dr;
+                    const c1 = col + dc;
+                    const r2 = row - dr;
+                    const c2 = col - dc;
+                    
+                    if (isValidCell(r1, c1) && isValidCell(r2, c2)) {
+                        const cell1 = gameBoard[r1][c1];
+                        const cell2 = gameBoard[r2][c2];
+                        
+                        if (currentLetter === 'O' && cell1 === 'S' && cell2 === 'S') {
+                            totalPoints++;
+                            highlightSOS(row, col, r1, c1, r2, c2);
+                        } else if (currentLetter === 'S') {
+                            if (cell1 === 'O' && isValidCell(row + 2*dr, col + 2*dc) && 
+                                gameBoard[row + 2*dr][col + 2*dc] === 'S') {
+                                totalPoints++;
+                                highlightSOS(row, col, r1, c1, row + 2*dr, col + 2*dc);
+                            }
+                            
+                            if (cell2 === 'O' && isValidCell(row - 2*dr, col - 2*dc) && 
+                                gameBoard[row - 2*dr][col - 2*dc] === 'S') {
+                                totalPoints++;
+                                highlightSOS(row, col, r2, c2, row - 2*dr, col - 2*dc);
+                            }
+                        }
+                    }
+                });
+                
+                return totalPoints;
+            }
+            
+            // Highlight SOS pattern
+            function highlightSOS(r1, c1, r2, c2, r3, c3) {
+                const cells = document.querySelectorAll('.cell');
+                
+                const index1 = r1 * SIZE + c1;
+                const index2 = r2 * SIZE + c2;
+                const index3 = r3 * SIZE + c3;
+                
+                cells[index1].style.backgroundColor = '#FFF9C4';
+                cells[index2].style.backgroundColor = '#FFF9C4';
+                cells[index3].style.backgroundColor = '#FFF9C4';
+                
+                setTimeout(() => {
+                    cells[index1].style.backgroundColor = '';
+                    cells[index2].style.backgroundColor = '';
+                    cells[index3].style.backgroundColor = '';
+                }, 1000);
+            }
+            
+            // Check if cell is valid
+            function isValidCell(row, col) {
+                return row >= 0 && row < SIZE && col >= 0 && col < SIZE;
+            }
+            
+            // Switch player
+            function switchPlayer() {
+                currentPlayer = currentPlayer === 1 ? 2 : 1;
+                player1.classList.toggle('active');
+                player2.classList.toggle('active');
+            }
+            
+            // Update the board display
+            function updateBoard() {
+                const cells = document.querySelectorAll('.cell');
+                
+                for (let row = 0; row < SIZE; row++) {
+                    for (let col = 0; col < SIZE; col++) {
+                        const index = row * SIZE + col;
+                        cells[index].textContent = gameBoard[row][col];
+                        cells[index].className = 'cell';
+                        if (gameBoard[row][col] === 'S') cells[index].classList.add('S');
+                        if (gameBoard[row][col] === 'O') cells[index].classList.add('O');
+                    }
+                }
+            }
+            
+            // Update scores
+            function updateScores() {
+                player1Score.textContent = scores[0];
+                player2Score.textContent = scores[1];
+            }
+            
+            // Start new game
+            function newGame() {
+                initializeBoard();
+                scores = [0, 0];
+                updateScores();
+                currentPlayer = 1;
+                player1.classList.add('active');
+                player2.classList.remove('active');
+                gameActive = true;
+            }
+            
+            // Change player names
+            function changeNames() {
+                const name1 = prompt('Enter Player 1 name:', player1NameInput.value);
+                if (name1 !== null) player1NameInput.value = name1;
+                
+                const name2 = prompt('Enter Player 2 name:', player2NameInput.value);
+                if (name2 !== null) player2NameInput.value = name2;
+            }
+            
+            // Event listeners
+            newGameBtn.addEventListener('click', newGame);
+            changeNamesBtn.addEventListener('click', changeNames);
+            
+            // Initialize the game
+            newGame();
+        });
+    </script>
+</body>
+</html>
